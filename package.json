@@ -1,6 +1,6 @@
 {
   "name": "query-json-to-md",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Format extracted GraphQL query JSON file to markdown.",
   "main": "index.js",
   "bin": {
