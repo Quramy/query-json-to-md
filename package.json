@@ -9,16 +9,21 @@
   "scripts": {
     "build": "tsc"
   },
-  "keywords": ["GraphQL"],
+  "keywords": [
+    "GraphQL"
+  ],
   "author": "Quramy",
   "license": "MIT",
   "dependencies": {
+    "graphql": "^16.5.0",
     "markdown-toc": "^1.2.0",
-    "mkdirp": "^1.0.4"
+    "mkdirp": "^1.0.4",
+    "prettier": "^2.7.1"
   },
   "devDependencies": {
     "@types/mkdirp": "^1.0.2",
     "@types/node": "^16.0.0",
+    "@types/prettier": "^2.6.3",
     "ts-node-dev": "^1.1.8",
     "typescript": "^4.3.5"
   }

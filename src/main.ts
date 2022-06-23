@@ -1,8 +1,22 @@
-import path from "path";
-import fs from "fs/promises";
+import path from "node:path";
+import fs from "node:fs/promises";
 import { sync } from "mkdirp";
+import { parse, print, DocumentNode, visit } from "graphql";
+import prettier from "prettier";
 
-const mdtoc = require("markdown-toc") as (md: string) => { readonly content: string };
+const mdtoc = require("markdown-toc") as (md: string) => {
+  readonly content: string;
+};
+
+function getName(documentNode: DocumentNode) {
+  let name: string | undefined = undefined;
+  visit(documentNode, {
+    OperationDefinition: node => {
+      name = node.name?.value;
+    }
+  });
+  return name ?? "(anonymous)";
+}
 
 async function main() {
   const jsonPath = process.argv.slice(2)[0];
@@ -16,20 +30,32 @@ async function main() {
   let mdBuf = "";
   const jsonFile = await fs.readFile(jsonPath, "utf-8");
   const json = JSON.parse(jsonFile);
-  const hashes = Object.keys(json);
-  for (const hash of hashes) {
-    const {
-      name,
-      source
-    }: { readonly name: string; readonly source: string } = json[hash];
-    mdBuf += `## ${name}`;
-    mdBuf += "\n```gql\n" + source + "\n```\n\n";
+  if (json.version === 2) {
+    for (const operation of json.operations) {
+      const { document }: { readonly name: string; readonly document: string } =
+        operation;
+      const documentNode = parse(document);
+      const name = getName(documentNode);
+      mdBuf += `## ${name}`;
+      mdBuf += "\n```gql\n" + print(documentNode) + "\n```\n\n";
+    }
+  } else {
+    const hashes = Object.keys(json);
+    for (const hash of hashes) {
+      const {
+        name,
+        source
+      }: { readonly name: string; readonly source: string } = json[hash];
+      mdBuf += `## ${name}`;
+      mdBuf += "\n```gql\n" + source + "\n```\n\n";
+    }
   }
   const toc = mdtoc(mdBuf);
-  mdBuf = `# ${path.basename(jsonPath)}` + "\n## ToC\n" + toc.content + "\n" + mdBuf;
-  const distDir = path.dirname(outFilePath)
-  await fs.writeFile(outFilePath, mdBuf, "utf-8");
+  mdBuf =
+    `# ${path.basename(jsonPath)}` + "\n## ToC\n" + toc.content + "\n" + mdBuf;
+  const distDir = path.dirname(outFilePath);
+  const formatted = prettier.format(mdBuf, { parser: "markdown" });
+  await fs.writeFile(outFilePath, formatted, "utf-8");
 }
 
 main();
-
