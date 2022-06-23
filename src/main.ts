@@ -32,11 +32,13 @@ async function main() {
   const json = JSON.parse(jsonFile);
   if (json.version === 2) {
     for (const operation of json.operations) {
-      const { document }: { readonly name: string; readonly document: string } =
-        operation;
+      const {
+        document,
+        signature
+      }: { readonly signature: string; readonly document: string } = operation;
       const documentNode = parse(document);
       const name = getName(documentNode);
-      mdBuf += `## ${name}`;
+      mdBuf += `## ${name}` + "\n" + `- signature: \`${signature}\``;
       mdBuf += "\n```gql\n" + print(documentNode) + "\n```\n\n";
     }
   } else {
@@ -46,7 +48,7 @@ async function main() {
         name,
         source
       }: { readonly name: string; readonly source: string } = json[hash];
-      mdBuf += `## ${name}`;
+      mdBuf += `## ${name}` + "\n" + `- signature: \`${hash}\``;
       mdBuf += "\n```gql\n" + source + "\n```\n\n";
     }
   }
