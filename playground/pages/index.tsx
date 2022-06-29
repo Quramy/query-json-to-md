@@ -16,24 +16,20 @@ import { processJson } from "../../src/main";
 // TODO
 const url = "github-queries.json";
 
-const processor = unified()
+const convertor = unified()
   .use(remarkParse)
   .use(remarkRehype)
   .use(rehypeHighlight, { languages: { graphql } })
   .use(rehypeStringify);
 
-async function processRawData(fileName: string, jsonData: any) {
-  const { markdownFile } = await processJson(fileName, jsonData);
-  const htmlFile = await processor.process(markdownFile);
-  return htmlFile;
-}
-
 function useReportHtml() {
-  const [html, setHtml] = useState<any>(null);
+  const [html, setHtml] = useState<string | null>(null);
   useEffect(() => {
     fetch(url)
-      .then(res => res.json())
-      .then(jsonData => processRawData("hoge", jsonData))
+      .then(async res => ({ url: new URL(res.url), data: await res.json() }))
+      .then(processJson)
+      .then(convertor.process.bind(convertor))
+      .then(file => file.toString())
       .then(setHtml);
   }, [setHtml]);
   return html;
@@ -41,6 +37,7 @@ function useReportHtml() {
 
 const Home: NextPage = () => {
   const html = useReportHtml();
+  if (!html) return null;
   return (
     <div className="markdown-container">
       <div
