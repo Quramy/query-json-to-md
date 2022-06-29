@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "operations": [
+    {
+      "signature": "1790ffa2a51203314159f0a4c10dcfc09e9542665f352232cef500390aab7cf2",
+      "document": "fragment RepositoryFragment on Repository{__typename description}query GitHubQuery($first:Int!){viewer{__typename repositories(first:$first){__typename nodes{__typename id...RepositoryFragment}}}}",
+      "metadata": {
+        "engineSignature": ""
+      }
+    },
+    {
+      "signature": "d3e6816c035687e4abe92bce750d01f5d7ee26ca1ab5cdab682eee9558b4e1be",
+      "document": "mutation UpdateMyRepository($repositoryId:ID!){updateRepository(input:{repositoryId:$repositoryId}){__typename clientMutationId}}",
+      "metadata": {
+        "engineSignature": ""
+      }
+    }
+  ]
+}

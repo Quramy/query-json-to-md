@@ -2,12 +2,17 @@
   "name": "query-json-to-md",
   "version": "1.0.3",
   "description": "Format extracted GraphQL query JSON file to markdown.",
+  "type": "module",
   "main": "index.js",
   "bin": {
     "query-json-to-md": "bin/bin.js"
   },
+  "files": [
+    "bin/**/*",
+    "lib/**/*"
+  ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc -p tsconfig.build.json"
   },
   "keywords": [
     "GraphQL"
@@ -16,15 +21,17 @@
   "license": "MIT",
   "dependencies": {
     "graphql": "^16.5.0",
-    "markdown-toc": "^1.2.0",
     "mkdirp": "^1.0.4",
-    "prettier": "^2.7.1"
+    "prettier": "^2.7.1",
+    "remark": "^14.0.2",
+    "remark-toc": "^8.0.1"
   },
   "devDependencies": {
     "@types/mkdirp": "^1.0.2",
     "@types/node": "^16.0.0",
     "@types/prettier": "^2.6.3",
+    "ts-node": "^10.8.1",
     "ts-node-dev": "^1.1.8",
-    "typescript": "^4.3.5"
+    "typescript": "^4.7.4"
   }
 }
