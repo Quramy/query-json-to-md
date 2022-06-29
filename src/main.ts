@@ -1,14 +1,11 @@
-import path from "node:path";
-import fs from "node:fs/promises";
-import { sync } from "mkdirp";
-import { parse, print, DocumentNode, visit } from "graphql";
-import prettier from "prettier";
+import { parse, print, visit, type DocumentNode } from "graphql";
 
-const mdtoc = require("markdown-toc") as (md: string) => {
-  readonly content: string;
-};
+import { remark } from "remark";
+import remarkToc from "remark-toc";
 
-function getName(documentNode: DocumentNode) {
+import type { ExtractedQueries } from "./types.js";
+
+function getOperaionName(documentNode: DocumentNode) {
   let name: string | undefined = undefined;
   visit(documentNode, {
     OperationDefinition: node => {
@@ -18,46 +15,41 @@ function getName(documentNode: DocumentNode) {
   return name ?? "(anonymous)";
 }
 
-async function main() {
-  const jsonPath = process.argv.slice(2)[0];
-  const outFilePath = process.argv.slice(2)[1] ?? process.cwd() + "/gql.md";
-  if (!jsonPath) {
-    console.log(`Usage:`);
-    console.log(`   query-json-to-md json_file_path`);
-    process.exit(0);
-    return;
-  }
-  let mdBuf = "";
-  const jsonFile = await fs.readFile(jsonPath, "utf-8");
-  const json = JSON.parse(jsonFile);
-  if (json.version === 2) {
-    for (const operation of json.operations) {
-      const {
-        document,
-        signature
-      }: { readonly signature: string; readonly document: string } = operation;
-      const documentNode = parse(document);
-      const name = getName(documentNode);
-      mdBuf += `## ${name}` + "\n" + `- signature: \`${signature}\``;
-      mdBuf += "\n```gql\n" + print(documentNode) + "\n```\n\n";
-    }
+function normalize(data: ExtractedQueries) {
+  if (data.version === 2) {
+    return data.operations.map(operation => ({
+      hash: operation.signature,
+      source: operation.document
+    }));
   } else {
-    const hashes = Object.keys(json);
-    for (const hash of hashes) {
-      const {
-        name,
-        source
-      }: { readonly name: string; readonly source: string } = json[hash];
-      mdBuf += `## ${name}` + "\n" + `- signature: \`${hash}\``;
-      mdBuf += "\n```gql\n" + source + "\n```\n\n";
-    }
+    return Object.entries(data).map(([hash, value]) => ({
+      hash,
+      source: typeof value === "string" ? value : value.source
+    }));
   }
-  const toc = mdtoc(mdBuf);
-  mdBuf =
-    `# ${path.basename(jsonPath)}` + "\n## ToC\n" + toc.content + "\n" + mdBuf;
-  const distDir = path.dirname(outFilePath);
-  const formatted = prettier.format(mdBuf, { parser: "markdown" });
-  await fs.writeFile(outFilePath, formatted, "utf-8");
 }
 
-main();
+export async function processJson({
+  url,
+  data
+}: {
+  readonly url: URL;
+  readonly data: ExtractedQueries;
+}) {
+  if (typeof data !== "object") {
+    throw new Error("Invalid JSON object");
+  }
+  const [title] = (url.pathname || "Extracted queries").split("/").slice(-1);
+  let mdBuf = `
+# ${title}
+Formatted from \`${url.toString()}\`.
+## Table of contents
+  `;
+  for (const entry of normalize(data)) {
+    const documentNode = parse(entry.source);
+    const operationName = getOperaionName(documentNode);
+    mdBuf += `## ${operationName}` + "\n" + `- signature: \`${entry.hash}\``;
+    mdBuf += "\n```graphql\n" + print(documentNode) + "\n```\n\n";
+  }
+  return await remark().use(remarkToc).process(mdBuf);
+}
